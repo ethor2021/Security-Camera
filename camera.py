@@ -1,6 +1,12 @@
 import cv2
 import time
 import datetime
+import os
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
+from smtplib import SMTP
 #from ffpyplayer.player import MediaPlayer
 SECONDS_TO_RECORD_AFTER_DETECTION = 5
 
@@ -32,7 +38,9 @@ class Camera:
                     self.detection = True
                     out = cv2.VideoWriter("video" + datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S") + ".mp4", self.fourcc, 20, self.frame_size)
                     print("Recording")
-                    cv2.imwrite("image" + datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S") + ".jpg", frame)
+                    image_name = "image" + datetime.datetime.now().strftime("%d-%m-%Y-%H-%M-%S") + ".jpg"
+                    cv2.imwrite(image_name, frame)
+                    self.send_email(image_name)
             elif self.detection:
                 if self.timer_started:
                     if time.time() - self.detection_stopped_time > SECONDS_TO_RECORD_AFTER_DETECTION:
@@ -56,6 +64,25 @@ class Camera:
         out.release()
         self.capture.release()
         cv2.destroyAllWindows
+
+    def send_email(self, image_name):
+        with open(image_name, 'rb') as f:
+            img_data = f.read()
+        fromEmail = 'security@local.com'
+        toEmail = 'eman.thoreson@gmail.com'
+        msg = MIMEMultipart()
+        msg['Subject'] = 'Security Camera Recording Activated - Face Image Attached'
+        msg['From'] = fromEmail
+        msg['To'] = toEmail
+
+        text = MIMEText("There has been a person spotted on your security camera. Attached is an image of their face.")
+        msg.attach(text)
+        image = MIMEImage(img_data, name=os.path.basename(image_name))
+        msg.attach(image)
+
+        server = SMTP(host='localhost', port=25)
+        server.sendmail(fromEmail, toEmail, msg.as_string())
+        server.close()
 
 if __name__ == "__main__":
     cam = Camera()
