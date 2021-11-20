@@ -68,8 +68,10 @@ class Camera:
     def send_email(self, image_name):
         with open(image_name, 'rb') as f:
             img_data = f.read()
-        fromEmail = 'security@local.com'
-        toEmail = 'eman.thoreson@gmail.com'
+        file = open('email-info.txt', 'r')
+        fromEmail = file.readline()
+        toEmail = file.readline()
+        gmail_password = file.readline()
         msg = MIMEMultipart()
         msg['Subject'] = 'Security Camera Recording Activated - Face Image Attached'
         msg['From'] = fromEmail
@@ -80,7 +82,10 @@ class Camera:
         image = MIMEImage(img_data, name=os.path.basename(image_name))
         msg.attach(image)
 
-        server = SMTP(host='localhost', port=25)
+        server = SMTP(host='smtp.gmail.com', port=587)
+        server.ehlo()
+        server.starttls()
+        server.login(fromEmail, gmail_password)
         server.sendmail(fromEmail, toEmail, msg.as_string())
         server.close()
 
