@@ -89,6 +89,8 @@ class Camera:
         server.sendmail(fromEmail, toEmail, msg.as_string())
         server.close()
 
+        print('Email Sent')
+
 if __name__ == "__main__":
     cam = Camera()
     cam.record()
